@@ -2,232 +2,205 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Roblox 2026 - FULL MULTIPLAYER</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Roblox 2026 - Mobile & Register Update</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --rbx-green: #00b06f; --bg: #f2f4f5; --sidebar-w: 180px; }
-        body, html { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; height: 100%; background: var(--bg); overflow: hidden; }
+        body, html { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; height: 100%; background: var(--bg); overflow: hidden; touch-action: none; }
 
         /* ИНТЕРФЕЙС */
         .top-nav { height: 50px; background: var(--rbx-green); display: flex; align-items: center; padding: 0 20px; color: white; z-index: 100; position: relative; }
         .sidebar { width: var(--sidebar-w); background: white; height: calc(100vh - 50px); float: left; border-right: 1px solid #ddd; }
+        @media (max-width: 600px) { .sidebar { display: none; } .main-view { margin-left: 0 !important; } }
         .nav-item { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #f0f0f0; color: #444; }
-        .nav-item.active { border-left: 4px solid var(--rbx-green); background: #f0f0f0; color: #000; font-weight: bold; }
+        .nav-item.active { border-left: 4px solid var(--rbx-green); background: #f0f0f0; font-weight: bold; }
         .main-view { margin-left: var(--sidebar-w); height: calc(100vh - 50px); overflow-y: auto; padding: 25px; box-sizing: border-box; }
         .page { display: none; }
         .page.active { display: block; }
 
-        /* СЕТЬ И ЧАТ */
-        #multi-ui { position: fixed; top: 60px; right: 20px; background: white; padding: 10px; border-radius: 8px; border: 1px solid #ccc; z-index: 1000; font-size: 12px; }
-        #chat-window { position: fixed; bottom: 20px; left: 20px; width: 280px; height: 180px; background: rgba(0,0,0,0.7); color: white; border-radius: 8px; display: flex; flex-direction: column; z-index: 2000; padding: 10px; }
-        #chat-msgs { flex: 1; overflow-y: auto; margin-bottom: 5px; font-size: 13px; }
-        #chat-in { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px; width: 90%; }
+        /* РЕГИСТРАЦИЯ */
+        #reg-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 5000; display: flex; align-items: center; justify-content: center; }
+        .reg-box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 300px; }
 
-        /* МАГАЗИН */
-        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-        .item-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; }
-        .buy-btn { background: var(--rbx-green); color: white; border: none; width: 100%; padding: 5px; border-radius: 4px; cursor: pointer; margin-top: 5px; }
+        /* ЧАТ */
+        #chat-window { position: fixed; bottom: 80px; left: 10px; width: 250px; height: 150px; background: rgba(0,0,0,0.5); color: white; border-radius: 8px; display: flex; flex-direction: column; z-index: 2000; padding: 8px; pointer-events: auto; }
+        #chat-msgs { flex: 1; overflow-y: auto; font-size: 12px; }
+        #chat-in { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px; width: 90%; margin-top: 5px; }
 
-        /* ИГРОВОЙ ЭКРАН */
+        /* МОБИЛЬНОЕ УПРАВЛЕНИЕ */
+        #mobile-controls { position: fixed; bottom: 30px; width: 100%; display: none; z-index: 3000; pointer-events: none; }
+        .joy-stick { width: 100px; height: 100px; background: rgba(255,255,255,0.3); border-radius: 50%; margin-left: 30px; pointer-events: auto; position: relative; }
+        .joy-stick::after { content: ''; position: absolute; width: 40px; height: 40px; background: white; border-radius: 50%; top: 30px; left: 30px; }
+        .jump-btn { width: 70px; height: 70px; background: rgba(255,255,255,0.5); border-radius: 50%; margin-right: 30px; pointer-events: auto; float: right; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+
+        /* МАГАЗИН И ИГРА */
+        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+        .item-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 10px; text-align: center; }
+        .buy-btn { background: var(--rbx-green); color: white; border: none; width: 100%; padding: 8px; border-radius: 4px; cursor: pointer; }
         #game-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 1500; display: none; }
-        #game-start { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; text-align: center; cursor: pointer; background: rgba(0,0,0,0.8); padding: 40px; border-radius: 20px; }
-        .leave-btn { position: absolute; top: 20px; right: 20px; padding: 10px; background: #ff4444; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 1600; }
     </style>
 </head>
 <body>
 
+<div id="reg-screen">
+    <div class="reg-box">
+        <h2>Регистрация</h2>
+        <input type="text" id="reg-user" placeholder="Юзернейм (Русские буквы)" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+        <button class="buy-btn" onclick="register()">Начать играть</button>
+        <p style="font-size: 10px; color: #666; margin-top: 10px;">Этот юзернейм будет использоваться для поиска тебя друзьями.</p>
+    </div>
+</div>
+
 <div class="top-nav">
-    <div style="font-weight: 900; font-size: 20px;">ROBLOX 2026</div>
-    <div style="margin-left: auto; margin-right: 20px;" id="header-user">Юзер: Игрок</div>
-    <div style="font-weight: bold; color: #ffcc00;">⟁ <span id="robux-val">50</span></div>
+    <div style="font-weight: 900;">ROBLOX 2026</div>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
+        <span id="header-user">Юзер: ...</span>
+        <span style="color: #ffcc00;">⟁ <span id="robux-val">50</span></span>
+    </div>
 </div>
 
 <div class="sidebar">
     <div class="nav-item active" onclick="tab('home', this)">Home</div>
     <div class="nav-item" onclick="tab('games', this)">Games</div>
     <div class="nav-item" onclick="tab('shop', this)">Shop</div>
-    <div class="nav-item" onclick="tab('inventory', this)">Inventory</div>
-    <div class="nav-item" onclick="tab('profile', this)">Profile</div>
+    <div class="nav-item" onclick="tab('profile', this)">Profile/Friends</div>
 </div>
 
 <div class="main-view">
     <div id="home" class="page active">
-        <h1>С возвращением!</h1>
-        <p>Мультиплеер подключен. Твой ID справа сверху.</p>
+        <h1>Привет, <span id="welcome-nick">Гость</span>!</h1>
+        <div style="background: white; padding: 20px; border-radius: 10px;">
+            <h3>Твой статус сети:</h3>
+            <p id="net-status">Подключение к серверам...</p>
+        </div>
     </div>
+
     <div id="games" class="page">
         <h2>Игры</h2>
-        <div class="item-card" style="width: 150px;" onclick="enterGame()">
-            <div style="font-size: 40px;">🏁</div>
-            <b>Mega Obby</b><br>
-            <button class="buy-btn">PLAY</button>
+        <div class="item-card" style="width: 120px;" onclick="enterGame()">
+            <div style="font-size: 30px;">🏃</div>
+            <b>Mega Obby</b><br><br>
+            <button class="buy-btn">ИГРАТЬ</button>
         </div>
     </div>
-    <div id="shop" class="page"><h2>Shop</h2><div id="shop-items" class="items-grid"></div></div>
-    <div id="inventory" class="page">
-        <h2>Avatar</h2>
-        <div style="display:flex; gap: 20px;">
-            <div id="avatar-preview" style="width: 300px; height: 400px; background: white; border: 1px solid #ddd;"></div>
-            <div id="inv-items" class="items-grid" style="flex:1;"></div>
-        </div>
-    </div>
-    <div id="profile" class="page">
-        <h2>Profile</h2>
-        <div style="background:white; padding:20px; border-radius:12px; max-width: 300px;">
-            <label>Ник:</label><input type="text" id="nickInput" style="width:100%; margin: 10px 0;"><br>
-            <label>Юзер (Рус):</label><input type="text" id="userInput" style="width:100%; margin: 10px 0;"><br>
-            <button class="buy-btn" onclick="saveProfile()">Save</button>
-        </div>
-    </div>
-</div>
 
-<div id="multi-ui">
-    <b>My ID:</b> <span id="my-id">...</span><br>
-    <input type="text" id="friend-id" placeholder="Friend ID" style="width: 80px; margin-top:5px;">
-    <button onclick="connectToFriend()">Add</button>
+    <div id="shop" class="page"><h2>Магазин</h2><div id="shop-items" class="items-grid"></div></div>
+
+    <div id="profile" class="page">
+        <h2>Твой профиль</h2>
+        <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+            <p><b>Твой Юзернейм (для друзей):</b> <span id="display-user">...</span></p>
+        </div>
+        <h2>Добавить друга</h2>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="search-friend" placeholder="Введите юзернейм друга..." style="flex: 1; padding: 10px;">
+            <button class="buy-btn" style="width: auto;" onclick="addFriendByUser()">Найти и добавить</button>
+        </div>
+    </div>
 </div>
 
 <div id="chat-window">
     <div id="chat-msgs"></div>
-    <input type="text" id="chat-in" placeholder="Type here...">
+    <input type="text" id="chat-in" placeholder="Чат...">
+</div>
+
+<div id="mobile-controls">
+    <div class="joy-stick" id="stick"></div>
+    <div class="jump-btn" id="jumpBtn">JUMP</div>
 </div>
 
 <div id="game-overlay">
     <div style="position: absolute; top: 20px; left: 20px; color: white; z-index: 1600;">
         <h2 id="hud-stage">Stage: 1</h2>
-        <h3 id="hud-robux">R$: 50</h3>
     </div>
-    <button class="leave-btn" onclick="exitGame()">LEAVE</button>
-    <div id="game-start" onclick="lockMouse()"><h2>CLICK TO START</h2><p>WASD + Space + Mouse</p></div>
+    <button style="position: absolute; top: 10px; right: 10px; z-index: 1601; padding: 10px; background: red; color: white; border: none;" onclick="exitGame()">LEAVE</button>
     <div id="game-container"></div>
 </div>
 
 <script>
-    // --- ДАННЫЕ И СОХРАНЕНИЕ ---
+    // --- ДАННЫЕ И РЕГИСТРАЦИЯ ---
     let robux = parseInt(localStorage.getItem('rbx')) || 50;
-    let nick = localStorage.getItem('nick') || "Игрок";
-    let username = localStorage.getItem('user') || "Игрок";
-    let ownedItems = JSON.parse(localStorage.getItem('owned')) || ['default'];
-    let equipped = JSON.parse(localStorage.getItem('equipped')) || { body: 0xcccccc, hat: null, face: 'default' };
+    let username = localStorage.getItem('user') || ""; 
+    let owned = JSON.parse(localStorage.getItem('owned')) || ['default'];
+    let equipped = { body: 0xcccccc };
 
-    const shopItems = [
-        { id: 'hat_top', name: 'Цилиндр 3D', price: 30, type: 'hat', icon: '🎩' },
-        { id: 'hat_cap', name: 'Кепка 3D', price: 20, type: 'hat', icon: '🧢' },
-        { id: 'face_cool', name: 'Крутое лицо', price: 15, type: 'face', icon: '😎' },
-        { id: 'suit_gold', name: 'Золото', price: 100, type: 'body', val: 0xffd700, icon: '👑' }
-    ];
-
-    function saveData() {
-        localStorage.setItem('rbx', robux);
-        localStorage.setItem('nick', nick);
-        localStorage.setItem('user', username);
-        localStorage.setItem('owned', JSON.stringify(ownedItems));
-        localStorage.setItem('equipped', JSON.stringify(equipped));
+    if (username) {
+        document.getElementById('reg-screen').style.display = 'none';
+        initApp();
     }
 
-    function updateUI() {
-        document.getElementById('robux-val').innerText = robux;
+    function register() {
+        let u = document.getElementById('reg-user').value.trim();
+        if (/^[а-яА-ЯёЁ]+$/.test(u) && u.length >= 3) {
+            username = u;
+            localStorage.setItem('user', u);
+            document.getElementById('reg-screen').style.display = 'none';
+            initApp();
+        } else {
+            alert("Используй только русские буквы (минимум 3)!");
+        }
+    }
+
+    function initApp() {
         document.getElementById('header-user').innerText = "Юзер: " + username;
-        document.getElementById('hud-robux').innerText = "R$: " + robux;
-        saveData();
+        document.getElementById('display-user').innerText = username;
+        document.getElementById('welcome-nick').innerText = username;
+        document.getElementById('robux-val').innerText = robux;
+        initNet();
+        if ('ontouchstart' in window) document.getElementById('mobile-controls').style.display = 'block';
     }
 
-    function tab(id, el) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        el.classList.add('active');
-        if(id === 'shop') renderShop();
-        if(id === 'inventory') { renderInv(); initInv3D(); }
-    }
-
-    function renderShop() {
-        const c = document.getElementById('shop-items'); c.innerHTML = '';
-        shopItems.forEach(i => {
-            const has = ownedItems.includes(i.id);
-            c.innerHTML += `<div class="item-card"><div style="font-size:30px;">${i.icon}</div><b>${i.name}</b><br>⟁${i.price}<br>
-            <button class="buy-btn" ${has || robux < i.price ? 'disabled' : ''} onclick="buy('${i.id}', ${i.price})">${has?'Owned':'Buy'}</button></div>`;
-        });
-    }
-
-    function renderInv() {
-        const c = document.getElementById('inv-items'); c.innerHTML = '';
-        ownedItems.forEach(id => {
-            const i = shopItems.find(x => x.id === id) || {name: 'Default', icon: '👤'};
-            c.innerHTML += `<div class="item-card" onclick="equip('${id}')"><div style="font-size:30px;">${i.icon}</div><b>${i.name}</b></div>`;
-        });
-    }
-
-    function buy(id, p) { if(robux >= p) { robux -= p; ownedItems.push(id); updateUI(); renderShop(); } }
-    function equip(id) {
-        const i = shopItems.find(x => x.id === id); if(!i) return;
-        if(i.type === 'body') equipped.body = i.val;
-        if(i.type === 'hat') equipped.hat = i.id;
-        if(i.type === 'face') equipped.face = i.id;
-        updateUI(); initInv3D();
-    }
-
-    function saveProfile() {
-        const u = document.getElementById('userInput').value;
-        if(/^[а-яА-ЯёЁ]+$/.test(u) && u.length >= 4) {
-            username = u; nick = document.getElementById('nickInput').value || nick;
-            updateUI(); alert("Saved!");
-        } else { alert("Ник на русском (мин 4 симв)!"); }
-    }
-
-    // --- СЕТЬ И ЧАТ ---
-    let peer, conn, friendMesh;
+    // --- СЕТЕВОЙ ДВИЖОК (ПО ЮЗЕРНЕЙМУ) ---
+    let peer, conn;
     function initNet() {
-        peer = new Peer();
-        peer.on('open', id => document.getElementById('my-id').innerText = id);
+        // Используем юзернейм как ID (транслит для PeerJS)
+        let peerId = "rbx2026_" + btoa(unescape(encodeURIComponent(username))).replace(/=/g, "");
+        peer = new Peer(peerId);
+
+        peer.on('open', () => {
+            document.getElementById('net-status').innerText = "Онлайн. Друзья могут тебя найти.";
+        });
+
         peer.on('connection', c => setupConn(c));
     }
-    function connectToFriend() { setupConn(peer.connect(document.getElementById('friend-id').value)); }
+
+    function addFriendByUser() {
+        let targetUser = document.getElementById('search-friend').value.trim();
+        let targetId = "rbx2026_" + btoa(unescape(encodeURIComponent(targetUser))).replace(/=/g, "");
+        setupConn(peer.connect(targetId));
+    }
+
     function setupConn(c) {
         conn = c;
-        conn.on('open', () => addMsg("System: Connected!"));
+        conn.on('open', () => addMsg("Система: Вы подключились к игроку!"));
         conn.on('data', data => {
-            if(data.type === 'chat') addMsg("Friend: " + data.msg);
-            if(data.type === 'pos' && friendMesh) { friendMesh.position.set(data.x, data.y, data.z); friendMesh.rotation.y = data.ry; }
+            if(data.type === 'chat') addMsg("Друг: " + data.msg);
+            if(data.type === 'pos' && friendMesh) {
+                friendMesh.position.set(data.x, data.y, data.z);
+                friendMesh.visible = true;
+            }
         });
     }
+
     function addMsg(t) {
-        const d = document.createElement('div'); d.innerText = t;
+        let d = document.createElement('div'); d.innerText = t;
         document.getElementById('chat-msgs').appendChild(d);
         document.getElementById('chat-msgs').scrollTop = 9999;
     }
+
     document.getElementById('chat-in').onkeypress = (e) => {
         if(e.key === 'Enter' && e.target.value) {
-            addMsg("Me: " + e.target.value);
+            addMsg("Я: " + e.target.value);
             if(conn) conn.send({type: 'chat', msg: e.target.value});
             e.target.value = "";
         }
     }
 
-    // --- 3D ДВИЖЕК (ПОЛНЫЙ) ---
-    function createChar(isFriend = false) {
-        const g = new THREE.Group();
-        const mat = new THREE.MeshLambertMaterial({color: isFriend ? 0x00aaff : equipped.body});
-        const skin = new THREE.MeshLambertMaterial({color: 0xffdbac});
-        
-        const torso = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2, 0.8), mat);
-        const head = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), skin); head.position.y = 1.6;
-        const lL = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2, 0.7), mat); lL.position.set(-0.4, -2, 0); lL.name="lL";
-        const rL = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2, 0.7), mat); rL.position.set(0.4, -2, 0); rL.name="rL";
-        
-        if(!isFriend) {
-            if(equipped.hat === 'hat_top') {
-                const h1 = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.1), new THREE.MeshLambertMaterial({color:0x222222})); h1.position.y=2.1;
-                const h2 = new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.6,1), new THREE.MeshLambertMaterial({color:0x222222})); h2.position.y=2.6;
-                g.add(h1, h2);
-            }
-        }
-        g.add(torso, head, lL, rL);
-        return g;
-    }
-
-    let scene, camera, renderer, player, platforms = [], isPlaying = false, stage = 1, vY = 0, yaw = 0, pitch = 0, keys = {};
+    // --- 3D И МОБИЛЬНОЕ УПРАВЛЕНИЕ ---
+    let scene, camera, renderer, player, friendMesh, platforms = [], isPlaying = false;
+    let keys = {}, joyPos = {x:0, y:0};
 
     function initWorld() {
         const cont = document.getElementById('game-container');
@@ -235,68 +208,84 @@
         camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         renderer = new THREE.WebGLRenderer({antialias: true}); renderer.setSize(window.innerWidth, window.innerHeight);
         cont.appendChild(renderer.domElement);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 
-        player = createChar(); scene.add(player);
-        friendMesh = createChar(true); scene.add(friendMesh);
+        // Персонажи
+        player = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3, 1), new THREE.MeshLambertMaterial({color: 0xcccccc}));
+        scene.add(player);
+        friendMesh = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3, 1), new THREE.MeshLambertMaterial({color: 0x00ff00}));
+        friendMesh.visible = false;
+        scene.add(friendMesh);
 
-        const addP = (x,y,z, gold=false) => {
-            const p = new THREE.Mesh(new THREE.BoxGeometry(gold?8:4, 1.5, gold?8:4), new THREE.MeshLambertMaterial({color: gold?0xffd700:0xcccccc}));
-            p.position.set(x,y,z); if(gold) p.userData.isG = true;
+        // Платформы
+        for(let i=0; i<40; i++) {
+            let p = new THREE.Mesh(new THREE.BoxGeometry(5, 1, 5), new THREE.MeshLambertMaterial({color: i%5==0?0xffd700:0xffffff}));
+            p.position.set(Math.sin(i)*5, i*2, -i*10);
             scene.add(p); platforms.push(p);
-        };
-        addP(0, -1, 0, true);
-        for(let i=1; i<50; i++) addP(Math.sin(i)*7, i*2.2, -i*12, i%5===0);
+        }
 
+        // Управление (ПК)
         window.onkeydown = (e) => keys[e.code] = true;
         window.onkeyup = (e) => keys[e.code] = false;
-        document.addEventListener('mousemove', e => { if(document.pointerLockElement) { yaw -= e.movementX*0.003; pitch -= e.movementY*0.003; pitch = Math.max(-0.8, Math.min(0.8, pitch)); }});
+
+        // Управление (Мобилки)
+        const stick = document.getElementById('stick');
+        stick.ontouchmove = (e) => {
+            let rect = stick.getBoundingClientRect();
+            let touch = e.touches[0];
+            joyPos.x = (touch.clientX - (rect.left + 50)) / 50;
+            joyPos.y = (touch.clientY - (rect.top + 50)) / 50;
+        };
+        stick.ontouchend = () => { joyPos = {x:0, y:0}; };
+        document.getElementById('jumpBtn').ontouchstart = () => { if(player.position.y <= 3) vY = 0.4; };
+
         loop();
     }
 
+    let vY = 0;
     function loop() {
         if(!isPlaying) { requestAnimationFrame(loop); return; }
-        let grounded = false;
+
+        // Гравитация и прыжки
+        vY -= 0.02; player.position.y += vY;
+        if(player.position.y < -20) player.position.set(0, 5, 0);
+
+        // Движение (ПК + Мобилки)
+        let dx = 0, dz = 0;
+        if(keys['KeyW']) dz = -0.2; if(keys['KeyS']) dz = 0.2;
+        if(keys['KeyA']) dx = -0.2; if(keys['KeyD']) dx = 0.2;
+        
+        // Джойстик
+        dx += joyPos.x * 0.2; dz += joyPos.y * 0.2;
+
+        player.position.x += dx; player.position.z += dz;
+
+        // Коллизия (упрощенно для мобилок)
         platforms.forEach(p => {
-            const dx = Math.abs(player.position.x - p.position.x);
-            const dz = Math.abs(player.position.z - p.position.z);
-            if(dx < (p.geometry.parameters.width/2 + 0.5) && dz < (p.geometry.parameters.depth/2 + 0.5) && player.position.y - p.position.y <= 2.9 && player.position.y - p.position.y >= 2.4) {
-                grounded = true; vY = 0; player.position.y = p.position.y + 2.75;
-                if(p.userData.isG && !p.userData.used) { p.userData.used = true; stage++; robux += 10; updateUI(); document.getElementById('hud-stage').innerText = "Stage: "+stage; }
+            if(Math.abs(player.position.x - p.position.x) < 3 && Math.abs(player.position.z - p.position.z) < 3 && Math.abs(player.position.y - p.position.y - 2) < 0.5) {
+                vY = 0; player.position.y = p.position.y + 2;
+                if(keys['Space']) vY = 0.4;
             }
         });
 
-        if(!grounded) vY -= 0.02;
-        if(grounded && keys['Space']) vY = 0.42;
-        player.position.y += vY;
-        if(player.position.y < -30) player.position.set(0, 5, 0);
+        // Камера
+        camera.position.set(player.position.x, player.position.y + 5, player.position.z + 15);
+        camera.lookAt(player.position);
 
-        const speed = 0.25;
-        let mx = 0, mz = 0;
-        if(keys['KeyW']) { mx -= Math.sin(yaw)*speed; mz -= Math.cos(yaw)*speed; }
-        if(keys['KeyS']) { mx += Math.sin(yaw)*speed; mz += Math.cos(yaw)*speed; }
-        if(keys['KeyA']) { mx -= Math.cos(yaw)*speed; mz += Math.sin(yaw)*speed; }
-        if(keys['KeyD']) { mx += Math.cos(yaw)*speed; mz -= Math.sin(yaw)*speed; }
-        player.position.x += mx; player.position.z += mz;
-        if(Math.abs(mx) > 0.01 || Math.abs(mz) > 0.01) player.rotation.y = Math.atan2(mx, mz);
-
-        const dist = 12;
-        camera.position.set(player.position.x + Math.sin(yaw)*Math.cos(pitch)*dist, player.position.y + Math.sin(pitch)*dist + 5, player.position.z + Math.cos(yaw)*Math.cos(pitch)*dist);
-        camera.lookAt(player.position.x, player.position.y + 2, player.position.z);
-
-        if(conn) conn.send({type:'pos', x:player.position.x, y:player.position.y, z:player.position.z, ry:player.rotation.y});
+        // Сеть
+        if(conn) conn.send({type:'pos', x:player.position.x, y:player.position.y, z:player.position.z});
 
         renderer.render(scene, camera);
         requestAnimationFrame(loop);
     }
 
-    function enterGame() { document.getElementById('game-overlay').style.display='block'; isPlaying=true; if(!scene) initWorld(); }
-    function exitGame() { document.getElementById('game-overlay').style.display='none'; isPlaying=false; document.exitPointerLock(); }
-    function lockMouse() { document.getElementById('game-container').requestPointerLock(); document.getElementById('game-start').style.display='none'; }
+    function tab(id, el) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
 
-    initNet(); updateUI();
+    function enterGame() { document.getElementById('game-overlay').style.display = 'block'; isPlaying = true; if(!scene) initWorld(); }
+    function exitGame() { document.getElementById('game-overlay').style.display = 'none'; isPlaying = false; }
 </script>
 </body>
-</html>
-
 </html>
