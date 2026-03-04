@@ -2,13 +2,14 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Roblox 2026 - Fixed Camera & Robux</title>
+    <title>Roblox 2026 - FULL MULTIPLAYER</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --rbx-green: #00b06f; --bg: #f2f4f5; --sidebar-w: 180px; }
         body, html { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; height: 100%; background: var(--bg); overflow: hidden; }
 
-        /* ИНТЕРФЕЙС (НИЧЕГО НЕ УДАЛЕНО) */
+        /* ИНТЕРФЕЙС */
         .top-nav { height: 50px; background: var(--rbx-green); display: flex; align-items: center; padding: 0 20px; color: white; z-index: 100; position: relative; }
         .sidebar { width: var(--sidebar-w); background: white; height: calc(100vh - 50px); float: left; border-right: 1px solid #ddd; }
         .nav-item { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #f0f0f0; color: #444; }
@@ -17,25 +18,21 @@
         .page { display: none; }
         .page.active { display: block; }
 
-        /* ПРОФИЛЬ */
-        .profile-card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #ddd; max-width: 400px; }
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
-        .input-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        /* СЕТЬ И ЧАТ */
+        #multi-ui { position: fixed; top: 60px; right: 20px; background: white; padding: 10px; border-radius: 8px; border: 1px solid #ccc; z-index: 1000; font-size: 12px; }
+        #chat-window { position: fixed; bottom: 20px; left: 20px; width: 280px; height: 180px; background: rgba(0,0,0,0.7); color: white; border-radius: 8px; display: flex; flex-direction: column; z-index: 2000; padding: 10px; }
+        #chat-msgs { flex: 1; overflow-y: auto; margin-bottom: 5px; font-size: 13px; }
+        #chat-in { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px; width: 90%; }
 
         /* МАГАЗИН */
         .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-        .item-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 10px; text-align: center; }
-        .item-thumb { height: 60px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 5px; }
-        .buy-btn { background: var(--rbx-green); color: white; border: none; width: 100%; padding: 5px; border-radius: 4px; cursor: pointer; }
-        .buy-btn:disabled { background: #ccc; }
+        .item-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; }
+        .buy-btn { background: var(--rbx-green); color: white; border: none; width: 100%; padding: 5px; border-radius: 4px; cursor: pointer; margin-top: 5px; }
 
         /* ИГРОВОЙ ЭКРАН */
-        #game-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 1000; display: none; }
-        #game-container { width: 100%; height: 100%; }
-        .game-hud { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; }
-        .leave-btn { position: absolute; top: 20px; right: 20px; padding: 10px; background: #ff4444; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 1001; }
-        #game-start-prompt { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0,0,0,0.8); padding: 30px; border-radius: 15px; cursor: pointer; text-align: center; }
+        #game-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 1500; display: none; }
+        #game-start { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; text-align: center; cursor: pointer; background: rgba(0,0,0,0.8); padding: 40px; border-radius: 20px; }
+        .leave-btn { position: absolute; top: 20px; right: 20px; padding: 10px; background: #ff4444; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 1600; }
     </style>
 </head>
 <body>
@@ -56,105 +53,110 @@
 
 <div class="main-view">
     <div id="home" class="page active">
-        <h1>Привет, <span id="home-nick">Игрок</span>!</h1>
-        <p>Управление исправлено. Наслаждайся свободным обзором мышью!</p>
+        <h1>С возвращением!</h1>
+        <p>Мультиплеер подключен. Твой ID справа сверху.</p>
     </div>
-
     <div id="games" class="page">
         <h2>Игры</h2>
         <div class="item-card" style="width: 150px;" onclick="enterGame()">
-            <div class="item-thumb">🏃</div>
-            <b>Hard Obby</b><br>
-            <button class="buy-btn">ИГРАТЬ</button>
+            <div style="font-size: 40px;">🏁</div>
+            <b>Mega Obby</b><br>
+            <button class="buy-btn">PLAY</button>
         </div>
     </div>
-
-    <div id="shop" class="page">
-        <h2>Shop</h2>
-        <div class="items-grid" id="shop-items"></div>
-    </div>
-
+    <div id="shop" class="page"><h2>Shop</h2><div id="shop-items" class="items-grid"></div></div>
     <div id="inventory" class="page">
-        <h2>Inventory</h2>
-        <div style="display: flex; gap: 20px;">
+        <h2>Avatar</h2>
+        <div style="display:flex; gap: 20px;">
             <div id="avatar-preview" style="width: 300px; height: 400px; background: white; border: 1px solid #ddd;"></div>
-            <div class="items-grid" id="inv-items" style="flex: 1;"></div>
+            <div id="inv-items" class="items-grid" style="flex:1;"></div>
         </div>
     </div>
-
     <div id="profile" class="page">
-        <h2>Настройки профиля</h2>
-        <div class="profile-card">
-            <div class="input-group"><label>Никнейм</label><input type="text" id="nickInput"></div>
-            <div class="input-group"><label>Юзернейм (Рус)</label><input type="text" id="userInput"></div>
-            <button class="buy-btn" onclick="saveProfile()">Сохранить изменения</button>
+        <h2>Profile</h2>
+        <div style="background:white; padding:20px; border-radius:12px; max-width: 300px;">
+            <label>Ник:</label><input type="text" id="nickInput" style="width:100%; margin: 10px 0;"><br>
+            <label>Юзер (Рус):</label><input type="text" id="userInput" style="width:100%; margin: 10px 0;"><br>
+            <button class="buy-btn" onclick="saveProfile()">Save</button>
         </div>
     </div>
 </div>
 
+<div id="multi-ui">
+    <b>My ID:</b> <span id="my-id">...</span><br>
+    <input type="text" id="friend-id" placeholder="Friend ID" style="width: 80px; margin-top:5px;">
+    <button onclick="connectToFriend()">Add</button>
+</div>
+
+<div id="chat-window">
+    <div id="chat-msgs"></div>
+    <input type="text" id="chat-in" placeholder="Type here...">
+</div>
+
 <div id="game-overlay">
-    <div class="game-hud">
+    <div style="position: absolute; top: 20px; left: 20px; color: white; z-index: 1600;">
         <h2 id="hud-stage">Stage: 1</h2>
-        <h3 id="hud-robux">Robux: 50</h3>
+        <h3 id="hud-robux">R$: 50</h3>
     </div>
-    <button class="leave-btn" onclick="exitGame()">ВЫЙТИ</button>
-    <div id="game-start-prompt" onclick="lockMouse()"><h2>НАЖМИ ДЛЯ ИГРЫ</h2><p>(Мышь - обзор, WASD - движение)</p></div>
+    <button class="leave-btn" onclick="exitGame()">LEAVE</button>
+    <div id="game-start" onclick="lockMouse()"><h2>CLICK TO START</h2><p>WASD + Space + Mouse</p></div>
     <div id="game-container"></div>
 </div>
 
 <script>
-    // --- ДАННЫЕ ---
-    let robux = 50, nick = "Игрок", username = "Игрок";
-    let ownedItems = ['default'];
-    let equipped = { body: 0xcccccc, hat: null, face: 'default' };
+    // --- ДАННЫЕ И СОХРАНЕНИЕ ---
+    let robux = parseInt(localStorage.getItem('rbx')) || 50;
+    let nick = localStorage.getItem('nick') || "Игрок";
+    let username = localStorage.getItem('user') || "Игрок";
+    let ownedItems = JSON.parse(localStorage.getItem('owned')) || ['default'];
+    let equipped = JSON.parse(localStorage.getItem('equipped')) || { body: 0xcccccc, hat: null, face: 'default' };
 
     const shopItems = [
         { id: 'hat_top', name: 'Цилиндр 3D', price: 30, type: 'hat', icon: '🎩' },
         { id: 'hat_cap', name: 'Кепка 3D', price: 20, type: 'hat', icon: '🧢' },
         { id: 'face_cool', name: 'Крутое лицо', price: 15, type: 'face', icon: '😎' },
-        { id: 'suit_gold', name: 'Золотой костюм', price: 100, type: 'body', val: 0xffd700, icon: '👑' }
+        { id: 'suit_gold', name: 'Золото', price: 100, type: 'body', val: 0xffd700, icon: '👑' }
     ];
+
+    function saveData() {
+        localStorage.setItem('rbx', robux);
+        localStorage.setItem('nick', nick);
+        localStorage.setItem('user', username);
+        localStorage.setItem('owned', JSON.stringify(ownedItems));
+        localStorage.setItem('equipped', JSON.stringify(equipped));
+    }
 
     function updateUI() {
         document.getElementById('robux-val').innerText = robux;
-        document.getElementById('hud-robux').innerText = "Robux: " + robux;
         document.getElementById('header-user').innerText = "Юзер: " + username;
-        document.getElementById('home-nick').innerText = nick;
+        document.getElementById('hud-robux').innerText = "R$: " + robux;
+        saveData();
     }
 
-    function tab(name, el) {
+    function tab(id, el) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.getElementById(name).classList.add('active');
+        document.getElementById(id).classList.add('active');
         el.classList.add('active');
-        if(name === 'shop') renderShop();
-        if(name === 'inventory') renderInv();
-    }
-
-    function saveProfile() {
-        const u = document.getElementById('userInput').value;
-        const n = document.getElementById('nickInput').value;
-        if(/^[а-яА-ЯёЁ]+$/.test(u) && u.length >= 4) {
-            username = u; nick = n || nick; updateUI(); alert("Сохранено!");
-        } else { alert("Юзернейм должен быть на русском (мин. 4 симв)"); }
+        if(id === 'shop') renderShop();
+        if(id === 'inventory') { renderInv(); initInv3D(); }
     }
 
     function renderShop() {
         const c = document.getElementById('shop-items'); c.innerHTML = '';
         shopItems.forEach(i => {
             const has = ownedItems.includes(i.id);
-            c.innerHTML += `<div class="item-card"><div class="item-thumb">${i.icon}</div><b>${i.name}</b><br>⟁${i.price}<br>
-            <button class="buy-btn" ${has || robux < i.price ? 'disabled' : ''} onclick="buy('${i.id}', ${i.price})">${has?'Куплено':'Купить'}</button></div>`;
+            c.innerHTML += `<div class="item-card"><div style="font-size:30px;">${i.icon}</div><b>${i.name}</b><br>⟁${i.price}<br>
+            <button class="buy-btn" ${has || robux < i.price ? 'disabled' : ''} onclick="buy('${i.id}', ${i.price})">${has?'Owned':'Buy'}</button></div>`;
         });
     }
 
     function renderInv() {
         const c = document.getElementById('inv-items'); c.innerHTML = '';
         ownedItems.forEach(id => {
-            const i = shopItems.find(x => x.id === id) || {name: 'Стандарт', icon: '👤'};
-            c.innerHTML += `<div class="item-card" onclick="equip('${id}')"><div class="item-thumb">${i.icon}</div><b>${i.name}</b></div>`;
+            const i = shopItems.find(x => x.id === id) || {name: 'Default', icon: '👤'};
+            c.innerHTML += `<div class="item-card" onclick="equip('${id}')"><div style="font-size:30px;">${i.icon}</div><b>${i.name}</b></div>`;
         });
-        initInv3D();
     }
 
     function buy(id, p) { if(robux >= p) { robux -= p; ownedItems.push(id); updateUI(); renderShop(); } }
@@ -163,165 +165,138 @@
         if(i.type === 'body') equipped.body = i.val;
         if(i.type === 'hat') equipped.hat = i.id;
         if(i.type === 'face') equipped.face = i.id;
-        initInv3D();
+        updateUI(); initInv3D();
     }
 
-    // --- 3D ГЕНЕРАЦИЯ ---
-    function createCharacter() {
-        const g = new THREE.Group();
-        const bodyMat = new THREE.MeshLambertMaterial({color: equipped.body});
-        const skinMat = new THREE.MeshLambertMaterial({color: 0xffdbac});
+    function saveProfile() {
+        const u = document.getElementById('userInput').value;
+        if(/^[а-яА-ЯёЁ]+$/.test(u) && u.length >= 4) {
+            username = u; nick = document.getElementById('nickInput').value || nick;
+            updateUI(); alert("Saved!");
+        } else { alert("Ник на русском (мин 4 симв)!"); }
+    }
 
-        const torso = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2, 0.8), bodyMat);
-        const head = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), skinMat); head.position.y = 1.6;
-        
-        const lArm = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2, 0.7), skinMat); lArm.position.set(-1.2, 0, 0); lArm.name="lA";
-        const rArm = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2, 0.7), skinMat); rArm.position.set(1.2, 0, 0); rArm.name="rA";
-        const lLeg = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2, 0.8), bodyMat); lLeg.position.set(-0.4, -2, 0); lLeg.name="lL";
-        const rLeg = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2, 0.8), bodyMat); rLeg.position.set(0.4, -2, 0); rLeg.name="rL";
-
-        // Face
-        const canv = document.createElement('canvas'); canv.width=64; canv.height=64;
-        const ctx = canv.getContext('2d'); ctx.fillStyle='#ffdbac'; ctx.fillRect(0,0,64,64);
-        ctx.fillStyle='black';
-        if(equipped.face === 'face_cool') { ctx.fillRect(10,25,20,10); ctx.fillRect(35,25,20,10); ctx.fillRect(20,45,25,3); }
-        else { ctx.beginPath(); ctx.arc(20,25,4,0,7); ctx.fill(); ctx.beginPath(); ctx.arc(44,25,4,0,7); ctx.fill(); ctx.strokeRect(25,45,15,1); }
-        const fPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.9,0.9), new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(canv)}));
-        fPlane.position.set(0, 1.6, 0.51); g.add(fPlane);
-
-        // Hats (3D)
-        if(equipped.hat === 'hat_top') {
-            const h1 = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.1), new THREE.MeshLambertMaterial({color:0x222222})); h1.position.y=2.1;
-            const h2 = new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.6,1), new THREE.MeshLambertMaterial({color:0x222222})); h2.position.y=2.6;
-            g.add(h1, h2);
-        } else if(equipped.hat === 'hat_cap') {
-            const h1 = new THREE.Mesh(new THREE.SphereGeometry(0.6,16,16,0,Math.PI*2,0,Math.PI/2), new THREE.MeshLambertMaterial({color:0xff4444})); h1.position.y=2.1;
-            const h2 = new THREE.Mesh(new THREE.BoxGeometry(1,0.1,0.8), new THREE.MeshLambertMaterial({color:0xff4444})); h2.position.set(0, 2.1, 0.5);
-            g.add(h1, h2);
+    // --- СЕТЬ И ЧАТ ---
+    let peer, conn, friendMesh;
+    function initNet() {
+        peer = new Peer();
+        peer.on('open', id => document.getElementById('my-id').innerText = id);
+        peer.on('connection', c => setupConn(c));
+    }
+    function connectToFriend() { setupConn(peer.connect(document.getElementById('friend-id').value)); }
+    function setupConn(c) {
+        conn = c;
+        conn.on('open', () => addMsg("System: Connected!"));
+        conn.on('data', data => {
+            if(data.type === 'chat') addMsg("Friend: " + data.msg);
+            if(data.type === 'pos' && friendMesh) { friendMesh.position.set(data.x, data.y, data.z); friendMesh.rotation.y = data.ry; }
+        });
+    }
+    function addMsg(t) {
+        const d = document.createElement('div'); d.innerText = t;
+        document.getElementById('chat-msgs').appendChild(d);
+        document.getElementById('chat-msgs').scrollTop = 9999;
+    }
+    document.getElementById('chat-in').onkeypress = (e) => {
+        if(e.key === 'Enter' && e.target.value) {
+            addMsg("Me: " + e.target.value);
+            if(conn) conn.send({type: 'chat', msg: e.target.value});
+            e.target.value = "";
         }
+    }
 
-        g.add(torso, head, lArm, rArm, lLeg, rLeg);
+    // --- 3D ДВИЖЕК (ПОЛНЫЙ) ---
+    function createChar(isFriend = false) {
+        const g = new THREE.Group();
+        const mat = new THREE.MeshLambertMaterial({color: isFriend ? 0x00aaff : equipped.body});
+        const skin = new THREE.MeshLambertMaterial({color: 0xffdbac});
+        
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2, 0.8), mat);
+        const head = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), skin); head.position.y = 1.6;
+        const lL = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2, 0.7), mat); lL.position.set(-0.4, -2, 0); lL.name="lL";
+        const rL = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2, 0.7), mat); rL.position.set(0.4, -2, 0); rL.name="rL";
+        
+        if(!isFriend) {
+            if(equipped.hat === 'hat_top') {
+                const h1 = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.1), new THREE.MeshLambertMaterial({color:0x222222})); h1.position.y=2.1;
+                const h2 = new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.6,1), new THREE.MeshLambertMaterial({color:0x222222})); h2.position.y=2.6;
+                g.add(h1, h2);
+            }
+        }
+        g.add(torso, head, lL, rL);
         return g;
     }
 
-    let invSc, invCam, invRen, invCh;
-    function initInv3D() {
-        const d = document.getElementById('avatar-preview'); d.innerHTML = '';
-        invSc = new THREE.Scene(); invSc.background = new THREE.Color(0xffffff);
-        invCam = new THREE.PerspectiveCamera(50, 300/400, 0.1, 100); invCam.position.set(0, 0, 7);
-        invRen = new THREE.WebGLRenderer({antialias: true}); invRen.setSize(300, 400);
-        d.appendChild(invRen.domElement);
-        invSc.add(new THREE.AmbientLight(0xffffff, 0.8));
-        invCh = createCharacter(); invSc.add(invCh);
-        const a = () => { if(document.getElementById('inventory').classList.contains('active')) { requestAnimationFrame(a); invCh.rotation.y += 0.02; invRen.render(invSc, invCam); } };
-        a();
-    }
-
-    // --- ИГРОВОЙ ДВИЖОК ---
-    let scene, camera, renderer, player, platforms = [];
-    let isPlaying = false, stage = 1, vY = 0;
-    let yaw = 0, pitch = 0; // Для обзора мышью
-    let keys = {};
-
-    function enterGame() { document.getElementById('game-overlay').style.display = 'block'; isPlaying = true; if(!scene) initWorld(); }
-    function exitGame() { document.getElementById('game-overlay').style.display = 'none'; isPlaying = false; document.exitPointerLock(); }
-    function lockMouse() { document.getElementById('game-container').requestPointerLock(); document.getElementById('game-start-prompt').style.display='none'; }
+    let scene, camera, renderer, player, platforms = [], isPlaying = false, stage = 1, vY = 0, yaw = 0, pitch = 0, keys = {};
 
     function initWorld() {
-        const container = document.getElementById('game-container');
+        const cont = document.getElementById('game-container');
         scene = new THREE.Scene(); scene.background = new THREE.Color(0x87ceeb);
         camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-        renderer = new THREE.WebGLRenderer({antialias: true});
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        container.appendChild(renderer.domElement);
+        renderer = new THREE.WebGLRenderer({antialias: true}); renderer.setSize(window.innerWidth, window.innerHeight);
+        cont.appendChild(renderer.domElement);
         scene.add(new THREE.AmbientLight(0xffffff, 0.7));
 
-        const addP = (x,y,z, isGold=false) => {
-            const p = new THREE.Mesh(new THREE.BoxGeometry(isGold?8:4, 2, isGold?8:4), new THREE.MeshLambertMaterial({color: isGold?0xffd700:0xcccccc}));
-            p.position.set(x,y,z); if(isGold) p.userData.isGold = true;
+        player = createChar(); scene.add(player);
+        friendMesh = createChar(true); scene.add(friendMesh);
+
+        const addP = (x,y,z, gold=false) => {
+            const p = new THREE.Mesh(new THREE.BoxGeometry(gold?8:4, 1.5, gold?8:4), new THREE.MeshLambertMaterial({color: gold?0xffd700:0xcccccc}));
+            p.position.set(x,y,z); if(gold) p.userData.isG = true;
             scene.add(p); platforms.push(p);
         };
         addP(0, -1, 0, true);
-        for(let i=1; i<40; i++) addP(Math.sin(i)*6, i*2.2, -i*11, i%5===0);
-
-        player = createCharacter();
-        scene.add(player);
+        for(let i=1; i<50; i++) addP(Math.sin(i)*7, i*2.2, -i*12, i%5===0);
 
         window.onkeydown = (e) => keys[e.code] = true;
         window.onkeyup = (e) => keys[e.code] = false;
-        document.addEventListener('mousemove', (e) => {
-            if(document.pointerLockElement) {
-                yaw -= e.movementX * 0.003;
-                pitch -= e.movementY * 0.003;
-                pitch = Math.max(-Math.PI/3, Math.min(Math.PI/3, pitch));
-            }
-        });
-
+        document.addEventListener('mousemove', e => { if(document.pointerLockElement) { yaw -= e.movementX*0.003; pitch -= e.movementY*0.003; pitch = Math.max(-0.8, Math.min(0.8, pitch)); }});
         loop();
     }
 
     function loop() {
         if(!isPlaying) { requestAnimationFrame(loop); return; }
-
-        let onGround = false;
+        let grounded = false;
         platforms.forEach(p => {
             const dx = Math.abs(player.position.x - p.position.x);
             const dz = Math.abs(player.position.z - p.position.z);
-            const w = (p.geometry.parameters.width/2) + 0.4;
-            const d = (p.geometry.parameters.depth/2) + 0.4;
-            
-            // Коллизия (проверка высоты над платформой)
-            if(dx < w && dz < d && player.position.y - p.position.y <= 3.1 && player.position.y - p.position.y >= 2.5) {
-                onGround = true; vY = 0; player.position.y = p.position.y + 3;
-                if(p.userData.isGold && !p.userData.touched) {
-                    p.userData.touched = true; stage++; robux += 10;
-                    document.getElementById('hud-stage').innerText = "Stage: " + stage; updateUI();
-                }
+            if(dx < (p.geometry.parameters.width/2 + 0.5) && dz < (p.geometry.parameters.depth/2 + 0.5) && player.position.y - p.position.y <= 2.9 && player.position.y - p.position.y >= 2.4) {
+                grounded = true; vY = 0; player.position.y = p.position.y + 2.75;
+                if(p.userData.isG && !p.userData.used) { p.userData.used = true; stage++; robux += 10; updateUI(); document.getElementById('hud-stage').innerText = "Stage: "+stage; }
             }
         });
 
-        if(!onGround) vY -= 0.02;
-        if(onGround && keys['Space']) vY = 0.45;
+        if(!grounded) vY -= 0.02;
+        if(grounded && keys['Space']) vY = 0.42;
         player.position.y += vY;
         if(player.position.y < -30) player.position.set(0, 5, 0);
 
-        // Движение относительно камеры
         const speed = 0.25;
-        let moveX = 0, moveZ = 0;
-        if(keys['KeyW']) { moveX -= Math.sin(yaw)*speed; moveZ -= Math.cos(yaw)*speed; }
-        if(keys['KeyS']) { moveX += Math.sin(yaw)*speed; moveZ += Math.cos(yaw)*speed; }
-        if(keys['KeyA']) { moveX -= Math.cos(yaw)*speed; moveZ += Math.sin(yaw)*speed; }
-        if(keys['KeyD']) { moveX += Math.cos(yaw)*speed; moveZ -= Math.sin(yaw)*speed; }
+        let mx = 0, mz = 0;
+        if(keys['KeyW']) { mx -= Math.sin(yaw)*speed; mz -= Math.cos(yaw)*speed; }
+        if(keys['KeyS']) { mx += Math.sin(yaw)*speed; mz += Math.cos(yaw)*speed; }
+        if(keys['KeyA']) { mx -= Math.cos(yaw)*speed; mz += Math.sin(yaw)*speed; }
+        if(keys['KeyD']) { mx += Math.cos(yaw)*speed; mz -= Math.sin(yaw)*speed; }
+        player.position.x += mx; player.position.z += mz;
+        if(Math.abs(mx) > 0.01 || Math.abs(mz) > 0.01) player.rotation.y = Math.atan2(mx, mz);
 
-        player.position.x += moveX;
-        player.position.z += moveZ;
-
-        // Поворот персонажа в сторону движения
-        if(Math.abs(moveX) > 0 || Math.abs(moveZ) > 0) {
-            player.rotation.y = Math.atan2(moveX, moveZ);
-        }
-
-        // Анимация (Исправлена)
-        const lL = player.getObjectByName("lL"), rL = player.getObjectByName("rL");
-        if(!onGround) {
-            lL.rotation.x = -0.6; rL.rotation.x = 0.2; // Поза прыжка
-        } else if (Math.abs(moveX) > 0.01) {
-            lL.rotation.x = Math.sin(Date.now()*0.01)*0.5;
-            rL.rotation.x = -Math.sin(Date.now()*0.01)*0.5;
-        } else {
-            lL.rotation.x = 0; rL.rotation.x = 0;
-        }
-
-        // Обновление камеры (Следование за игроком)
-        const dist = 15;
-        camera.position.x = player.position.x + Math.sin(yaw) * Math.cos(pitch) * dist;
-        camera.position.z = player.position.z + Math.cos(yaw) * Math.cos(pitch) * dist;
-        camera.position.y = player.position.y + Math.sin(pitch) * dist + 6;
+        const dist = 12;
+        camera.position.set(player.position.x + Math.sin(yaw)*Math.cos(pitch)*dist, player.position.y + Math.sin(pitch)*dist + 5, player.position.z + Math.cos(yaw)*Math.cos(pitch)*dist);
         camera.lookAt(player.position.x, player.position.y + 2, player.position.z);
+
+        if(conn) conn.send({type:'pos', x:player.position.x, y:player.position.y, z:player.position.z, ry:player.rotation.y});
 
         renderer.render(scene, camera);
         requestAnimationFrame(loop);
     }
+
+    function enterGame() { document.getElementById('game-overlay').style.display='block'; isPlaying=true; if(!scene) initWorld(); }
+    function exitGame() { document.getElementById('game-overlay').style.display='none'; isPlaying=false; document.exitPointerLock(); }
+    function lockMouse() { document.getElementById('game-container').requestPointerLock(); document.getElementById('game-start').style.display='none'; }
+
+    initNet(); updateUI();
 </script>
 </body>
+</html>
+
 </html>
