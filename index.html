@@ -3,289 +3,251 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Roblox 2026 - Mobile & Register Update</title>
+    <title>Roblox 2026 - Fixed Mobile & Engine</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --rbx-green: #00b06f; --bg: #f2f4f5; --sidebar-w: 180px; }
+        :root { --rbx-green: #00b06f; --bg: #f2f4f5; }
         body, html { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; height: 100%; background: var(--bg); overflow: hidden; touch-action: none; }
 
-        /* ИНТЕРФЕЙС */
-        .top-nav { height: 50px; background: var(--rbx-green); display: flex; align-items: center; padding: 0 20px; color: white; z-index: 100; position: relative; }
-        .sidebar { width: var(--sidebar-w); background: white; height: calc(100vh - 50px); float: left; border-right: 1px solid #ddd; }
-        @media (max-width: 600px) { .sidebar { display: none; } .main-view { margin-left: 0 !important; } }
-        .nav-item { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #f0f0f0; color: #444; }
-        .nav-item.active { border-left: 4px solid var(--rbx-green); background: #f0f0f0; font-weight: bold; }
-        .main-view { margin-left: var(--sidebar-w); height: calc(100vh - 50px); overflow-y: auto; padding: 25px; box-sizing: border-box; }
+        /* ВЕРХНЯЯ ПАНЕЛЬ */
+        .top-nav { height: 50px; background: var(--rbx-green); display: flex; align-items: center; padding: 0 15px; color: white; position: relative; z-index: 1000; }
+        
+        /* ГЛАВНОЕ МЕНЮ (АДАПТИВНОЕ) */
+        .main-container { display: flex; height: calc(100vh - 50px); }
+        .sidebar { width: 200px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        .nav-item { padding: 15px; cursor: pointer; border-bottom: 1px solid #eee; text-align: center; font-weight: bold; color: #444; }
+        .nav-item.active { background: #eee; color: var(--rbx-green); border-left: 5px solid var(--rbx-green); }
+
+        /* МОБИЛЬНОЕ МЕНЮ (НИЖНЕЕ) */
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; bottom: 0; left: 0; width: 100%; height: 60px; flex-direction: row; z-index: 2000; border-right: none; border-top: 1px solid #ddd; }
+            .nav-item { flex: 1; padding: 10px; font-size: 12px; border-bottom: none; border-top: 3px solid transparent; }
+            .nav-item.active { border-left: none; border-top: 3px solid var(--rbx-green); }
+            .main-view { padding-bottom: 70px !important; margin-left: 0 !important; width: 100% !important; }
+        }
+
+        .main-view { flex: 1; padding: 20px; overflow-y: auto; box-sizing: border-box; }
         .page { display: none; }
         .page.active { display: block; }
 
         /* РЕГИСТРАЦИЯ */
-        #reg-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 5000; display: flex; align-items: center; justify-content: center; }
-        .reg-box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 300px; }
-
+        #reg-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f2f4f5; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .reg-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        
         /* ЧАТ */
-        #chat-window { position: fixed; bottom: 80px; left: 10px; width: 250px; height: 150px; background: rgba(0,0,0,0.5); color: white; border-radius: 8px; display: flex; flex-direction: column; z-index: 2000; padding: 8px; pointer-events: auto; }
-        #chat-msgs { flex: 1; overflow-y: auto; font-size: 12px; }
-        #chat-in { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px; width: 90%; margin-top: 5px; }
+        #chat-ui { position: fixed; top: 60px; left: 10px; width: 220px; height: 160px; background: rgba(0,0,0,0.6); border-radius: 8px; z-index: 3000; display: flex; flex-direction: column; padding: 8px; color: white; pointer-events: auto; }
+        #chat-msgs { flex: 1; overflow-y: auto; font-size: 12px; margin-bottom: 5px; }
+        #chat-in { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px; border-radius: 4px; }
 
-        /* МОБИЛЬНОЕ УПРАВЛЕНИЕ */
-        #mobile-controls { position: fixed; bottom: 30px; width: 100%; display: none; z-index: 3000; pointer-events: none; }
-        .joy-stick { width: 100px; height: 100px; background: rgba(255,255,255,0.3); border-radius: 50%; margin-left: 30px; pointer-events: auto; position: relative; }
-        .joy-stick::after { content: ''; position: absolute; width: 40px; height: 40px; background: white; border-radius: 50%; top: 30px; left: 30px; }
-        .jump-btn { width: 70px; height: 70px; background: rgba(255,255,255,0.5); border-radius: 50%; margin-right: 30px; pointer-events: auto; float: right; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        /* КНОПКИ УПРАВЛЕНИЯ В ИГРЕ */
+        #mobile-game-btns { position: fixed; bottom: 80px; right: 20px; z-index: 4000; display: none; }
+        .jump-btn { width: 70px; height: 70px; background: rgba(255,255,255,0.5); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: black; pointer-events: auto; }
 
-        /* МАГАЗИН И ИГРА */
-        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
-        .item-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 10px; text-align: center; }
-        .buy-btn { background: var(--rbx-green); color: white; border: none; width: 100%; padding: 8px; border-radius: 4px; cursor: pointer; }
-        #game-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 1500; display: none; }
+        .play-btn { background: var(--rbx-green); color: white; border: none; padding: 15px 40px; border-radius: 10px; font-size: 20px; cursor: pointer; font-weight: bold; }
+        #game-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2500; display: none; background: #000; }
     </style>
 </head>
 <body>
 
 <div id="reg-screen">
-    <div class="reg-box">
-        <h2>Регистрация</h2>
-        <input type="text" id="reg-user" placeholder="Юзернейм (Русские буквы)" style="width: 100%; padding: 10px; margin-bottom: 10px;">
-        <button class="buy-btn" onclick="register()">Начать играть</button>
-        <p style="font-size: 10px; color: #666; margin-top: 10px;">Этот юзернейм будет использоваться для поиска тебя друзьями.</p>
+    <div class="reg-card">
+        <h2>Добро пожаловать</h2>
+        <input type="text" id="nick-in" placeholder="Твой ник (Русские буквы)" style="padding: 12px; width: 200px; border: 1px solid #ddd; border-radius: 5px;"><br><br>
+        <button class="play-btn" style="padding: 10px 30px; font-size: 16px;" onclick="doReg()">Войти</button>
     </div>
 </div>
 
 <div class="top-nav">
-    <div style="font-weight: 900;">ROBLOX 2026</div>
-    <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
-        <span id="header-user">Юзер: ...</span>
-        <span style="color: #ffcc00;">⟁ <span id="robux-val">50</span></span>
-    </div>
+    <div style="font-weight: 900; font-size: 18px;">ROBLOX 2026</div>
+    <div style="margin-left: auto; font-size: 14px;" id="stat-user">Юзер: ...</div>
 </div>
 
-<div class="sidebar">
-    <div class="nav-item active" onclick="tab('home', this)">Home</div>
-    <div class="nav-item" onclick="tab('games', this)">Games</div>
-    <div class="nav-item" onclick="tab('shop', this)">Shop</div>
-    <div class="nav-item" onclick="tab('profile', this)">Profile/Friends</div>
-</div>
-
-<div class="main-view">
-    <div id="home" class="page active">
-        <h1>Привет, <span id="welcome-nick">Гость</span>!</h1>
-        <div style="background: white; padding: 20px; border-radius: 10px;">
-            <h3>Твой статус сети:</h3>
-            <p id="net-status">Подключение к серверам...</p>
-        </div>
+<div class="main-container">
+    <div class="sidebar">
+        <div class="nav-item active" onclick="showTab('home', this)">Home</div>
+        <div class="nav-item" onclick="showTab('games', this)">Games</div>
+        <div class="nav-item" onclick="showTab('shop', this)">Shop</div>
+        <div class="nav-item" onclick="showTab('profile', this)">Profile</div>
     </div>
 
-    <div id="games" class="page">
-        <h2>Игры</h2>
-        <div class="item-card" style="width: 120px;" onclick="enterGame()">
-            <div style="font-size: 30px;">🏃</div>
-            <b>Mega Obby</b><br><br>
-            <button class="buy-btn">ИГРАТЬ</button>
+    <div class="main-view">
+        <div id="home" class="page active">
+            <h1>Привет, <span id="hello-name">Игрок</span>!</h1>
+            <p>Добавляй друзей по нику во вкладке Profile и играй вместе.</p>
         </div>
-    </div>
 
-    <div id="shop" class="page"><h2>Магазин</h2><div id="shop-items" class="items-grid"></div></div>
-
-    <div id="profile" class="page">
-        <h2>Твой профиль</h2>
-        <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-            <p><b>Твой Юзернейм (для друзей):</b> <span id="display-user">...</span></p>
+        <div id="games" class="page">
+            <h2>Доступные игры</h2>
+            <div style="background: white; padding: 20px; border-radius: 10px; display: inline-block; text-align: center;">
+                <div style="font-size: 50px;">🏞️</div>
+                <b>Classic Baseplate</b><br><br>
+                <button class="play-btn" onclick="startGame()">ИГРАТЬ</button>
+            </div>
         </div>
-        <h2>Добавить друга</h2>
-        <div style="display: flex; gap: 10px;">
-            <input type="text" id="search-friend" placeholder="Введите юзернейм друга..." style="flex: 1; padding: 10px;">
-            <button class="buy-btn" style="width: auto;" onclick="addFriendByUser()">Найти и добавить</button>
+
+        <div id="shop" class="page">
+            <h2>Магазин (Скоро)</h2>
+            <p>Здесь будут скины и вещи за Робуксы.</p>
+        </div>
+
+        <div id="profile" class="page">
+            <h2>Твой профиль</h2>
+            <p><b>Юзернейм:</b> <span id="my-username">...</span></p>
+            <hr>
+            <h3>Добавить друга</h3>
+            <input type="text" id="f-search" placeholder="Ник друга..." style="padding: 10px;">
+            <button onclick="connectFriend()" style="padding: 10px; background: #000; color: white; border: none; border-radius: 5px;">Найти</button>
         </div>
     </div>
 </div>
 
-<div id="chat-window">
+<div id="chat-ui">
     <div id="chat-msgs"></div>
-    <input type="text" id="chat-in" placeholder="Чат...">
+    <input type="text" id="chat-in" placeholder="Нажми Enter...">
 </div>
 
-<div id="mobile-controls">
-    <div class="joy-stick" id="stick"></div>
-    <div class="jump-btn" id="jumpBtn">JUMP</div>
-</div>
-
-<div id="game-overlay">
-    <div style="position: absolute; top: 20px; left: 20px; color: white; z-index: 1600;">
-        <h2 id="hud-stage">Stage: 1</h2>
-    </div>
-    <button style="position: absolute; top: 10px; right: 10px; z-index: 1601; padding: 10px; background: red; color: white; border: none;" onclick="exitGame()">LEAVE</button>
-    <div id="game-container"></div>
+<div id="game-view">
+    <button style="position: absolute; top: 15px; right: 15px; z-index: 5000; padding: 10px 20px; background: red; color: white; border: none; border-radius: 5px;" onclick="stopGame()">ВЫЙТИ</button>
+    <div id="mobile-game-btns"><div class="jump-btn" id="j-btn">JUMP</div></div>
+    <div id="render-cont"></div>
 </div>
 
 <script>
-    // --- ДАННЫЕ И РЕГИСТРАЦИЯ ---
-    let robux = parseInt(localStorage.getItem('rbx')) || 50;
-    let username = localStorage.getItem('user') || ""; 
-    let owned = JSON.parse(localStorage.getItem('owned')) || ['default'];
-    let equipped = { body: 0xcccccc };
+    let myNick = localStorage.getItem('rbx_nick') || "";
+    let peer, conn, friendMesh;
 
-    if (username) {
-        document.getElementById('reg-screen').style.display = 'none';
-        initApp();
+    if(myNick) { document.getElementById('reg-screen').style.display = 'none'; startNet(); }
+
+    function doReg() {
+        let val = document.getElementById('nick-in').value.trim();
+        if(/^[а-яА-ЯёЁ]+$/.test(val) && val.length > 2) {
+            localStorage.setItem('rbx_nick', val);
+            location.reload();
+        } else alert("Введи ник русскими буквами!");
     }
 
-    function register() {
-        let u = document.getElementById('reg-user').value.trim();
-        if (/^[а-яА-ЯёЁ]+$/.test(u) && u.length >= 3) {
-            username = u;
-            localStorage.setItem('user', u);
-            document.getElementById('reg-screen').style.display = 'none';
-            initApp();
-        } else {
-            alert("Используй только русские буквы (минимум 3)!");
-        }
+    function startNet() {
+        document.getElementById('hello-name').innerText = myNick;
+        document.getElementById('my-username').innerText = myNick;
+        document.getElementById('stat-user').innerText = "Юзер: " + myNick;
+
+        // Генерация ID для сети
+        let netId = "r26_" + btoa(unescape(encodeURIComponent(myNick))).replace(/=/g, "");
+        peer = new Peer(netId);
+        peer.on('connection', c => handleConn(c));
     }
 
-    function initApp() {
-        document.getElementById('header-user').innerText = "Юзер: " + username;
-        document.getElementById('display-user').innerText = username;
-        document.getElementById('welcome-nick').innerText = username;
-        document.getElementById('robux-val').innerText = robux;
-        initNet();
-        if ('ontouchstart' in window) document.getElementById('mobile-controls').style.display = 'block';
+    function connectFriend() {
+        let f = document.getElementById('f-search').value.trim();
+        let fId = "r26_" + btoa(unescape(encodeURIComponent(f))).replace(/=/g, "");
+        handleConn(peer.connect(fId));
     }
 
-    // --- СЕТЕВОЙ ДВИЖОК (ПО ЮЗЕРНЕЙМУ) ---
-    let peer, conn;
-    function initNet() {
-        // Используем юзернейм как ID (транслит для PeerJS)
-        let peerId = "rbx2026_" + btoa(unescape(encodeURIComponent(username))).replace(/=/g, "");
-        peer = new Peer(peerId);
-
-        peer.on('open', () => {
-            document.getElementById('net-status').innerText = "Онлайн. Друзья могут тебя найти.";
-        });
-
-        peer.on('connection', c => setupConn(c));
-    }
-
-    function addFriendByUser() {
-        let targetUser = document.getElementById('search-friend').value.trim();
-        let targetId = "rbx2026_" + btoa(unescape(encodeURIComponent(targetUser))).replace(/=/g, "");
-        setupConn(peer.connect(targetId));
-    }
-
-    function setupConn(c) {
+    function handleConn(c) {
         conn = c;
-        conn.on('open', () => addMsg("Система: Вы подключились к игроку!"));
-        conn.on('data', data => {
-            if(data.type === 'chat') addMsg("Друг: " + data.msg);
-            if(data.type === 'pos' && friendMesh) {
-                friendMesh.position.set(data.x, data.y, data.z);
-                friendMesh.visible = true;
-            }
+        conn.on('open', () => addMsg("Система: Друг подключен!"));
+        conn.on('data', d => {
+            if(d.type === 'chat') addMsg("Друг: " + d.msg);
+            if(d.type === 'pos' && friendMesh) { friendMesh.position.set(d.x, d.y, d.z); friendMesh.visible = true; }
         });
     }
 
     function addMsg(t) {
-        let d = document.createElement('div'); d.innerText = t;
-        document.getElementById('chat-msgs').appendChild(d);
+        let m = document.createElement('div'); m.innerText = t;
+        document.getElementById('chat-msgs').appendChild(m);
         document.getElementById('chat-msgs').scrollTop = 9999;
     }
 
     document.getElementById('chat-in').onkeypress = (e) => {
         if(e.key === 'Enter' && e.target.value) {
             addMsg("Я: " + e.target.value);
-            if(conn) conn.send({type: 'chat', msg: e.target.value});
+            if(conn) conn.send({type:'chat', msg: e.target.value});
             e.target.value = "";
         }
+    };
+
+    function showTab(id, el) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        el.classList.add('active');
     }
 
-    // --- 3D И МОБИЛЬНОЕ УПРАВЛЕНИЕ ---
-    let scene, camera, renderer, player, friendMesh, platforms = [], isPlaying = false;
-    let keys = {}, joyPos = {x:0, y:0};
+    // --- 3D ДВИЖОК ---
+    let scene, camera, renderer, player, inGame = false;
+    let vY = 0;
 
-    function initWorld() {
-        const cont = document.getElementById('game-container');
-        scene = new THREE.Scene(); scene.background = new THREE.Color(0x87ceeb);
+    function startGame() {
+        document.getElementById('game-view').style.display = 'block';
+        if('ontouchstart' in window) document.getElementById('mobile-game-btns').style.display = 'block';
+        inGame = true;
+        init3D();
+    }
+
+    function stopGame() {
+        document.getElementById('game-view').style.display = 'none';
+        document.getElementById('mobile-game-btns').style.display = 'none';
+        inGame = false;
+        location.reload(); 
+    }
+
+    function init3D() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87ceeb); // Небо
+
         camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-        renderer = new THREE.WebGLRenderer({antialias: true}); renderer.setSize(window.innerWidth, window.innerHeight);
-        cont.appendChild(renderer.domElement);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('render-cont').appendChild(renderer.domElement);
 
-        // Персонажи
-        player = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3, 1), new THREE.MeshLambertMaterial({color: 0xcccccc}));
+        // Свет (чтобы не было черного экрана)
+        let light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 10, 7);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+
+        // Игрок
+        player = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshLambertMaterial({color: 0xcccccc}));
+        player.position.y = 1;
         scene.add(player);
-        friendMesh = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3, 1), new THREE.MeshLambertMaterial({color: 0x00ff00}));
+
+        // Друг
+        friendMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshLambertMaterial({color: 0x00ff00}));
         friendMesh.visible = false;
         scene.add(friendMesh);
 
-        // Платформы
-        for(let i=0; i<40; i++) {
-            let p = new THREE.Mesh(new THREE.BoxGeometry(5, 1, 5), new THREE.MeshLambertMaterial({color: i%5==0?0xffd700:0xffffff}));
-            p.position.set(Math.sin(i)*5, i*2, -i*10);
-            scene.add(p); platforms.push(p);
-        }
+        // Земля
+        let ground = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshLambertMaterial({color: 0x555555}));
+        ground.rotation.x = -Math.PI/2;
+        scene.add(ground);
 
-        // Управление (ПК)
-        window.onkeydown = (e) => keys[e.code] = true;
-        window.onkeyup = (e) => keys[e.code] = false;
-
-        // Управление (Мобилки)
-        const stick = document.getElementById('stick');
-        stick.ontouchmove = (e) => {
-            let rect = stick.getBoundingClientRect();
-            let touch = e.touches[0];
-            joyPos.x = (touch.clientX - (rect.left + 50)) / 50;
-            joyPos.y = (touch.clientY - (rect.top + 50)) / 50;
-        };
-        stick.ontouchend = () => { joyPos = {x:0, y:0}; };
-        document.getElementById('jumpBtn').ontouchstart = () => { if(player.position.y <= 3) vY = 0.4; };
-
-        loop();
+        camera.position.set(0, 5, 10);
+        
+        document.getElementById('j-btn').ontouchstart = () => { if(player.position.y < 1.1) vY = 0.3; };
+        
+        animate();
     }
 
-    let vY = 0;
-    function loop() {
-        if(!isPlaying) { requestAnimationFrame(loop); return; }
+    function animate() {
+        if(!inGame) return;
+        requestAnimationFrame(animate);
 
-        // Гравитация и прыжки
-        vY -= 0.02; player.position.y += vY;
-        if(player.position.y < -20) player.position.set(0, 5, 0);
+        // Физика
+        vY -= 0.015; player.position.y += vY;
+        if(player.position.y < 1) { player.position.y = 1; vY = 0; }
 
-        // Движение (ПК + Мобилки)
-        let dx = 0, dz = 0;
-        if(keys['KeyW']) dz = -0.2; if(keys['KeyS']) dz = 0.2;
-        if(keys['KeyA']) dx = -0.2; if(keys['KeyD']) dx = 0.2;
-        
-        // Джойстик
-        dx += joyPos.x * 0.2; dz += joyPos.y * 0.2;
+        // Постоянное движение вперед для теста
+        player.position.z -= 0.04;
 
-        player.position.x += dx; player.position.z += dz;
-
-        // Коллизия (упрощенно для мобилок)
-        platforms.forEach(p => {
-            if(Math.abs(player.position.x - p.position.x) < 3 && Math.abs(player.position.z - p.position.z) < 3 && Math.abs(player.position.y - p.position.y - 2) < 0.5) {
-                vY = 0; player.position.y = p.position.y + 2;
-                if(keys['Space']) vY = 0.4;
-            }
-        });
-
-        // Камера
-        camera.position.set(player.position.x, player.position.y + 5, player.position.z + 15);
+        // Камера следует за игроком
+        camera.position.lerp(new THREE.Vector3(player.position.x, player.position.y + 4, player.position.z + 8), 0.1);
         camera.lookAt(player.position);
 
-        // Сеть
         if(conn) conn.send({type:'pos', x:player.position.x, y:player.position.y, z:player.position.z});
 
         renderer.render(scene, camera);
-        requestAnimationFrame(loop);
     }
-
-    function tab(id, el) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-
-    function enterGame() { document.getElementById('game-overlay').style.display = 'block'; isPlaying = true; if(!scene) initWorld(); }
-    function exitGame() { document.getElementById('game-overlay').style.display = 'none'; isPlaying = false; }
 </script>
 </body>
 </html>
